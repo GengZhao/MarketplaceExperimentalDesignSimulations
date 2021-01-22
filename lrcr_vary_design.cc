@@ -22,10 +22,21 @@ int main() {
     int nIters = 10000;
     int nThrds = 48;
 
-    long double phi_0 = /* 0.1 book rate */ 0.11133;
-    long double phi_1 = /* 0.15 book rate */ 0.17736; // /* 0.2 book rate */ 0.2525; // /* 0.11 book rate */ 0.1239; // = /* 0.101 book rate */ 0.11258;
-    unsigned long long n = 524'288ULL; // 536'870'912ULL; // 2'097'152ULL; // 1'048'576ULL; // 2^20
-    unsigned long long m = 1'048'576ULL; // /* rho=9.02 */ 4'729'078ULL; // /* rho=6.35 */ 3'329'020ULL; // 67'108'864ULL; // 16'777'216ULL; // 90'699'264ULL; // 3^11 * 2^9
+    /* phi     | booking rate = 1 - exp(-(1 - exp(-phi)))
+     * --------+--------
+     * 0.11133 | 0.1
+     * 0.11258 | 0.101
+     * 0.1239  | 0.11
+     * 0.17736 | 0.15
+     * 0.2525  | 0.2
+     * 0.28563 | 0.22
+     * 0.33924 | 0.25
+     * 0.44111 | 0.3
+     */
+    long double phi_0 = 0.2525;
+    long double phi_1 = 0.33924;
+    unsigned long long n = 1'000'000ULL; // 536'870'912ULL; // 2'097'152ULL; // 1'048'576ULL; // 2^20
+    unsigned long long m = 1'000'000ULL; // /* rho=9.02 */ 4'729'078ULL; // /* rho=6.35 */ 3'329'020ULL; // 67'108'864ULL; // 16'777'216ULL; // 90'699'264ULL; // 3^11 * 2^9
     long double rho = (long double) m / n;
     // long double beta = exp(-rho);
     // vector<long double> ks = {0.0, 1.0, 2.0};
@@ -34,10 +45,10 @@ int main() {
     string timeStr = getTime();
     outFile.open("lrcr_vary_design-" + timeStr + ".txt");
 
-    long double stepSize = 0.02;
+    long double stepSize = 0.4;
     long double a_l = 1.0;
-    long double a_c = stepSize;
-    /*
+    long double a_c = 0.1;
+
     while (a_c <= 0.99) {
         // Print n, m, phi_0, phi_1, rho, a_l, a_c
         outFile << n << ' ' << m << ' ' << phi_0 << ' ' << phi_1 << ' ' << rho << ' ' << a_l << ' ' << a_c << '\n';
@@ -74,7 +85,14 @@ int main() {
 
         for (int thrd = 0; thrd < nThrds; thrd++) {
             thrds.push_back(thread([&](int ti) {
-                Marketplace mp(n, m, phi_0, phi_1);
+                // Initialize instance of Marketplace
+                Marketplace mp(
+                        n, m,
+                        vector<long double>{1.0},
+                        vector<long double>{1.0},
+                        vector<vector<long double> >{vector<long double>{phi_0}},
+                        vector<vector<long double> >{vector<long double>{phi_1}}
+                    );
                 while (true) {
                     lockCounter.lock();
                     if (counter == nIters) {
@@ -138,9 +156,8 @@ int main() {
         cout << "=> a_l & a_c: " << a_l << ' ' << a_c << endl;
         a_c += stepSize;
     }
-    */
 
-    a_l = stepSize;
+    a_l = 0.1;
     a_c = 1.0;
     while (a_l <= 0.99) {
         // Print n, m, phi_0, phi_1, rho, a_l, a_c
@@ -177,7 +194,14 @@ int main() {
 
         for (int thrd = 0; thrd < nThrds; thrd++) {
             thrds.push_back(thread([&](int ti) {
-                Marketplace mp(n, m, phi_0, phi_1);
+                // Initialize instance of Marketplace
+                Marketplace mp(
+                        n, m,
+                        vector<long double>{1.0},
+                        vector<long double>{1.0},
+                        vector<vector<long double> >{vector<long double>{phi_0}},
+                        vector<vector<long double> >{vector<long double>{phi_1}}
+                    );
                 while (true) {
                     lockCounter.lock();
                     if (counter == nIters) {

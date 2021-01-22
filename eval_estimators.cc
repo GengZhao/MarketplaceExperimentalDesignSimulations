@@ -72,7 +72,14 @@ int main() {
 
         for (int thrd = 0; thrd < nThrds; thrd++) {
             thrds.push_back(thread([&](int ti) {
-                Marketplace mp(n, m, phi_0, phi_1);
+                // Initialize instance of Marketplace
+                Marketplace mp(
+                        n, m,
+                        vector<long double>{1.0},
+                        vector<long double>{1.0},
+                        vector<vector<long double> >{vector<long double>{phi_0}},
+                        vector<vector<long double> >{vector<long double>{phi_1}}
+                    );
                 while (true) {
                     lockCounter.lock();
                     if (counter == nIters) {

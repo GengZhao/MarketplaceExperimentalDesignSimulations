@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <algorithm>
 #include <vector>
@@ -12,8 +13,12 @@ using namespace std;
 
 int main()
 {
-    long long i = 0;
-    cout << sizeof(unsigned long long) << " " << sizeof(long double) << endl;
+    // long long i = 0;
+    cout << fixed << setprecision(20);
+    cout << sizeof(double) << " " << sizeof(long double) << endl;
+    cout << (double) 0.1 << " " << (long double) 0.1 << endl;
+    cout << (double) 1 / 3.0 << " " << (long double) 1 / 3.0 << endl;
+    cout << (double) 0.7 << " " << (long double) 0.7 << endl;
     /*
     while (true) {
         random_device rd;

@@ -1,3 +1,6 @@
+#ifndef MY_UTILS_H
+#define MY_UTILS_H
+
 #include <iostream>
 #include <ctime>
 #include <cmath>
@@ -37,3 +40,4 @@ void printVector2DTsv(const std::vector<T>& vec2d)
     }
 }
 
+#endif

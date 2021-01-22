@@ -1,15 +1,18 @@
 #ifndef MARKETPLACE_H
 #define MARKETPLACE_H
 
-#include <iostream>
-#include <fstream>
 #include <algorithm>
-#include <vector>
-#include <tuple>
-#include <set>
-#include <map>
+#include <cassert>
 #include <cmath>
+#include <fstream>
+#include <functional>
+#include <iostream>
+#include <map>
 #include <random>
+#include <set>
+#include <tuple>
+#include <utility>
+#include <vector>
 
 class Marketplace
 {
@@ -19,14 +22,22 @@ class Marketplace
 
         const unsigned long long n;
         const unsigned long long m;
-        const long double phi_0;
-        const long double phi_1;
+        std::vector<std::vector<long double> > phi_0;
+        std::vector<std::vector<long double> > phi_1;
+        std::vector<long double> ltype_fractions;
+        std::vector<long double> ctype_fractions;
+        int n_ltypes, n_ctypes;
+        std::vector<unsigned long long> ltype_start_indices;
+        std::vector<unsigned long long> ctype_start_indices;
+        std::vector<unsigned long long> ltype_counts;
+        std::vector<unsigned long long> ctype_counts;
+
         long double a_c;
         long double a_l;
-        const long double edge_prob_0;
-        const long double edge_prob_1;
-        const long double empty_consideration_prob_0;
-        const long double empty_consideration_prob_1;
+        std::vector<std::vector<long double> > edge_prob_0;
+        std::vector<std::vector<long double> > edge_prob_1;
+        // std::vector<std::vector<long double> > empty_consideration_prob_0;
+        // std::vector<std::vector<long double> > empty_consideration_prob_1;
 
         unsigned long long q_00;
         unsigned long long q_01;
@@ -36,9 +47,16 @@ class Marketplace
         void reset();
 
     public:
-        const long double gte;
+        long double gte;
 
-        Marketplace(const unsigned long long n, const unsigned long long m, const long double phi_0, const long double phi_1);
+        Marketplace(
+                const unsigned long long n,
+                const unsigned long long m,
+                const std::vector<long double>& ltype_fractions,
+                const std::vector<long double>& ctype_fractions,
+                const std::vector<std::vector<long double> >& phi_0,
+                const std::vector<std::vector<long double> >& phi_1
+            );
 
         void run_LR(const long double a_l=0.5);
         void run_CR(const long double a_c=0.5);

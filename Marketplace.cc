@@ -1,21 +1,88 @@
-#include <iostream>
-#include <fstream>
 #include <algorithm>
-#include <vector>
-#include <tuple>
-#include <set>
-#include <map>
+#include <cassert>
 #include <cmath>
+#include <fstream>
+#include <functional>
+#include <iostream>
+#include <map>
 #include <random>
+#include <set>
+#include <tuple>
+#include <utility>
+#include <vector>
 
 #include "Marketplace.h"
 
 using namespace std;
 
-Marketplace::Marketplace(const unsigned long long n, const unsigned long long m, const long double phi_0, const long double phi_1)
-    : rng(rd()), n(n), m(m), phi_0(phi_0), phi_1(phi_1), edge_prob_0(phi_0 / n), edge_prob_1(phi_1 / n),
-    empty_consideration_prob_0(pow(1 - edge_prob_0, n)), empty_consideration_prob_1(pow(1 - edge_prob_1, n)),
-    gte(pow(1 - (1 - empty_consideration_prob_0) / n, m) - pow(1 - (1 - empty_consideration_prob_1) / n, m)) { }
+Marketplace::Marketplace(
+        const unsigned long long n,
+        const unsigned long long m,
+        const vector<long double>& ltype_fractions,
+        const vector<long double>& ctype_fractions,
+        const vector<vector<long double> >& phi_0,
+        const vector<vector<long double> >& phi_1
+    ) : rng(rd()), n(n), m(m), phi_0(phi_0), phi_1(phi_1),
+    ltype_fractions(ltype_fractions), ctype_fractions(ctype_fractions),
+    n_ltypes(ltype_fractions.size()), n_ctypes(ctype_fractions.size()),
+    ltype_start_indices(n_ltypes), ctype_start_indices(n_ctypes), 
+    ltype_counts(n_ltypes), ctype_counts(n_ctypes),
+    edge_prob_0(n_ctypes, vector<long double>(n_ltypes)), edge_prob_1(n_ctypes, vector<long double>(n_ltypes)),
+    // empty_consideration_prob_0(pow(1 - edge_prob_0, n)), empty_consideration_prob_1(pow(1 - edge_prob_1, n)),
+    gte(0.0)
+    // gte(pow(1 - (1 - empty_consideration_prob_0) / n, m) - pow(1 - (1 - empty_consideration_prob_1) / n, m))
+{
+    long double lfrac = 0.0, cfrac = 0.0;
+    unsigned long long ltype_start = 0ULL;
+    for (unsigned short ltype = 0; ltype < n_ltypes; ltype++) {
+        ltype_start_indices[ltype] = ltype_start;
+        lfrac += ltype_fractions[ltype];
+        ltype_start = (unsigned long long) round(lfrac * n);
+        ltype_counts[ltype] = ltype_start - ltype_start_indices[ltype];
+    }
+    assert(ltype_start == n);
+    unsigned long long ctype_start = 0ULL;
+    for (unsigned short ctype = 0; ctype < n_ctypes; ctype++) {
+        ctype_start_indices[ctype] = ctype_start;
+        cfrac += ctype_fractions[ctype];
+        ctype_start = (unsigned long long) round(cfrac * m);
+        ctype_counts[ctype] = ctype_start - ctype_start_indices[ctype];
+    }
+    assert(ctype_start == m);
+
+    for (unsigned short ctype = 0; ctype < n_ctypes; ctype++) {
+        transform(phi_0[ctype].begin(), phi_0[ctype].end(), edge_prob_0[ctype].begin(), bind2nd(divides<long double>(), n));
+        transform(phi_1[ctype].begin(), phi_1[ctype].end(), edge_prob_1[ctype].begin(), bind2nd(divides<long double>(), n));
+    }
+
+    // gte
+    vector<vector<long double> > phi_0_star(n_ctypes, vector<long double>(n_ltypes)), phi_1_star(n_ctypes, vector<long double>(n_ltypes));
+    for (unsigned short ctype = 0; ctype < n_ctypes; ctype++) {
+        long double c_consider_rates_0 = inner_product(ltype_fractions.begin(), ltype_fractions.end(), phi_0[ctype].begin(), (long double) 0.0);
+        long double c_consider_rates_1 = inner_product(ltype_fractions.begin(), ltype_fractions.end(), phi_1[ctype].begin(), (long double) 0.0);
+        transform(
+                phi_0[ctype].begin(),
+                phi_0[ctype].end(),
+                phi_0_star[ctype].begin(),
+                bind1st(multiplies<long double>(),
+                    (1 - exp(-c_consider_rates_0)) / c_consider_rates_0 * m / n));
+        transform(
+                phi_1[ctype].begin(),
+                phi_1[ctype].end(),
+                phi_1_star[ctype].begin(),
+                bind1st(multiplies<long double>(),
+                    (1 - exp(-c_consider_rates_1)) / c_consider_rates_1 * m / n));
+    }
+    vector<long double> l_book_rates_0(n_ltypes), l_book_rates_1(n_ltypes);
+    for (unsigned short ltype = 0; ltype < n_ltypes; ltype++) {
+        long double l_application_rate_0 = 0.0, l_application_rate_1 = 0.0;
+        for (unsigned short ctype = 0; ctype < n_ctypes; ctype++) {
+            l_application_rate_0 += phi_0_star[ctype][ltype] * ctype_fractions[ctype];
+            l_application_rate_1 += phi_1_star[ctype][ltype] * ctype_fractions[ctype];
+        }
+        gte += ltype_fractions[ltype] * (exp(-l_application_rate_0) - exp(-l_application_rate_1));
+    }
+}
 
 void Marketplace::reset()
 {
@@ -37,10 +104,69 @@ void Marketplace::run_TSR(const long double a_l, const long double a_c)
     this->a_l = a_l;
     this->a_c = a_c;
 
-    map<unsigned long long, vector<unsigned long long> > applications;
-    unsigned long long n_1 = n * a_l;
-    unsigned long long n_0 = n - n_1;
+    map<pair<unsigned short, unsigned long long>, vector<pair<unsigned short, unsigned long long> > > applications;
+    vector<unsigned long long> n_1s, n_0s;
+    transform(ltype_counts.begin(), ltype_counts.end(), back_inserter(n_1s), bind1st(multiplies<long double>(), a_l));
+    transform(ltype_counts.begin(), ltype_counts.end(), n_1s.begin(), back_inserter(n_0s), minus<unsigned long long>());
 
+    for (unsigned short ctype = 0; ctype < n_ctypes; ctype++) {
+        unsigned long long ctype_count = ctype_counts[ctype];
+        long double m_1 = ctype_count * a_c;
+        for (unsigned long long c = 0; c < ctype_count; c++) {
+            // TODO
+            vector<unsigned long long> n_ltype_treatment_listings_considered(n_ltypes), n_ltype_control_listings_considered(n_ltypes);
+            if (c < m_1) { // treatment customer
+                for (unsigned short ltype = 0; ltype < n_ltypes; ltype++) {
+                    n_ltype_treatment_listings_considered[ltype] = n_1s[ltype] && binomial_distribution<unsigned long long>(n_1s[ltype], edge_prob_1[ctype][ltype])(rng);
+                    n_ltype_control_listings_considered[ltype] = n_0s[ltype] && binomial_distribution<unsigned long long>(n_0s[ltype], edge_prob_0[ctype][ltype])(rng);
+                    // unsigned long long n_treatment_listing_considered = n_1 && min(poisson_distribution<unsigned long long>(phi_1 * a_l)(rng), n_1);
+                    // unsigned long long n_control_listings_considered = n_0 && min(poisson_distribution<unsigned long long>(phi_0 * (1 - a_l))(rng), n_0);
+                }
+            } else { // control customer
+                for (unsigned short ltype = 0; ltype < n_ltypes; ltype++) {
+                    n_ltype_treatment_listings_considered[ltype] = n_1s[ltype] && binomial_distribution<unsigned long long>(n_1s[ltype], edge_prob_0[ctype][ltype])(rng);
+                    n_ltype_control_listings_considered[ltype] = n_0s[ltype] && binomial_distribution<unsigned long long>(n_0s[ltype], edge_prob_0[ctype][ltype])(rng);
+                }
+            }
+            unsigned long long n_treatment_listings_considered = accumulate(
+                    n_ltype_treatment_listings_considered.begin(),
+                    n_ltype_treatment_listings_considered.end(),
+                    decltype(n_ltype_treatment_listings_considered)::value_type(0.0)
+                );
+            unsigned long long n_control_listings_considered = accumulate(
+                    n_ltype_control_listings_considered.begin(),
+                    n_ltype_control_listings_considered.end(),
+                    decltype(n_ltype_control_listings_considered)::value_type(0.0)
+                );
+            unsigned long long total_considered = n_treatment_listings_considered + n_control_listings_considered;
+            if (total_considered) {
+                unsigned short listing_to_apply_type;
+                unsigned long long listing_to_apply_index;
+                if (uniform_real_distribution<long double>(0.0, 1.0)(rng) * total_considered < n_treatment_listings_considered) {
+                    listing_to_apply_type = discrete_distribution<unsigned short>(
+                            n_ltype_treatment_listings_considered.begin(),
+                            n_ltype_treatment_listings_considered.end()
+                        )(rng);
+                    listing_to_apply_index = uniform_int_distribution<unsigned long long>(0, n_1s[listing_to_apply_type] - 1)(rng);
+                } else {
+                    listing_to_apply_type = discrete_distribution<unsigned short>(
+                            n_ltype_control_listings_considered.begin(),
+                            n_ltype_control_listings_considered.end()
+                        )(rng);
+                    listing_to_apply_index = uniform_int_distribution<unsigned long long>(n_1s[listing_to_apply_type], ltype_counts[listing_to_apply_type] - 1)(rng);
+                }
+                applications[pair<unsigned short, unsigned long long>{listing_to_apply_type, listing_to_apply_index}]
+                    .push_back(pair<unsigned short, unsigned long long>{ctype, c});
+            }
+            // } else { // control customer
+                // if (uniform_real_distribution<long double>(0.0, 1.0)(rng) > empty_consideration_prob_0) {
+                    // applications[uniform_int_distribution<unsigned long long>(0, n - 1)(rng)].push_back(c);
+                // }
+            // }
+        }
+    }
+
+    /*
     for (unsigned long long c = 0; c < m; c++) {
         if (c < m * a_c) { // treatment customer
             unsigned long long n_treatment_listing_considered = n_1 && binomial_distribution<unsigned long long>(n_1, edge_prob_1)(rng);
@@ -63,16 +189,18 @@ void Marketplace::run_TSR(const long double a_l, const long double a_c)
             }
         }
     }
+    */
+
     for (auto const& it : applications) {
-        unsigned long long c = it.second[uniform_int_distribution<unsigned long long>(0, it.second.size()-1)(rng)];
-        if (it.first < n * a_l) {
-            if (c < m * a_c) {
+        pair<unsigned short, unsigned long long> c_type_index = it.second[uniform_int_distribution<unsigned long long>(0, it.second.size()-1)(rng)];
+        if (it.first.second < ltype_counts[it.first.first] * a_l) {
+            if (c_type_index.second < ctype_counts[c_type_index.first] * a_c) {
                 q_11++;
             } else {
                 q_01++;
             }
         } else {
-            if (c < m * a_c) {
+            if (c_type_index.second < ctype_counts[c_type_index.first] * a_c) {
                 q_10++;
             } else {
                 q_00++;
