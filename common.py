@@ -8,6 +8,21 @@ def G(x): return 1-np.exp(-x)
 
 def F(x): return G(x) / x
 
+def num_gte(conrate, tildeconrate, lmbda):
+    return (G(lmbda * G(tildeconrate)) - G(lmbda * G(conrate))) / lmbda
+
+def bias_lr(conrate, tildeconrate, lmbda, a_l):
+    ngte = num_gte(conrate, tildeconrate, lmbda)
+    barconrate = (1-a_l) * conrate + a_l * tildeconrate
+    return (G(lmbda * tildeconrate * F(barconrate)) - G(lmbda * conrate * F(barconrate))) / lmbda - ngte
+
+def bias_cr(conrate, tildeconrate, lmbda, a_c):
+    ngte = num_gte(conrate, tildeconrate, lmbda)
+    apprate = G(conrate)
+    tildeapprate = G(tildeconrate)
+    barapprate = (1-a_c) * apprate + a_c * tildeapprate
+    return (tildeapprate - apprate) * F(lmbda * barapprate) - ngte
+
 def vt_lr(conrate, tildeconrate, lmbda, a_l):
     g = G(lmbda * tildeconrate * F((1-a_l) * conrate + a_l * tildeconrate))
     return g * (1-g) / a_l
@@ -38,28 +53,28 @@ def vc_cr(apprate, tildeapprate, barapprate, lmbda, a_c):
 def cvtt_cr(apprate, tildeapprate, barapprate, lmbda, a_c):
     t1 = -(1-a_c) * apprate * tildeapprate * F(lmbda * barapprate)**2 * lmbda / barapprate
     t2 = -a_c * tildeapprate**2 * lmbda * np.exp(-2 * lmbda * barapprate) / barapprate
-    t3 = (1-a_c)**2 * a_c * lmbda * apprate * (1 - (1-a_c) * apprate) * \
+    t3 = (1-a_c) * a_c * lmbda * apprate * (1 - apprate) * \
             (-tildeapprate * F(lmbda * barapprate) / barapprate + tildeapprate * np.exp(-lmbda * barapprate) / barapprate)**2
-    t4 = a_c * lmbda * tildeapprate * (1 - a_c * tildeapprate) * \
+    t4 = lmbda * tildeapprate * (1 - tildeapprate) * \
             ((1-a_c) * apprate * F(lmbda * barapprate) / barapprate + a_c * tildeapprate * np.exp(-lmbda * barapprate) / barapprate)**2
     return (t1 + t2 + t3 + t4) / a_c
 
 def cvcc_cr(apprate, tildeapprate, barapprate, lmbda, a_c):
     t1 = -a_c * apprate * tildeapprate * F(lmbda * barapprate)**2 * lmbda / barapprate
     t2 = -(1-a_c) * apprate**2 * lmbda * np.exp(-2 * lmbda * barapprate) / barapprate
-    t3 = (1-a_c) * lmbda * apprate * (1 - (1-a_c) * apprate) * \
+    t3 = lmbda * apprate * (1 - apprate) * \
             (a_c * tildeapprate * F(lmbda * barapprate) / barapprate + (1-a_c) * apprate * np.exp(-lmbda * barapprate) / barapprate)**2
-    t4 = a_c**2 * (1-a_c) * lmbda * tildeapprate * (1 - a_c * apprate) * \
+    t4 = a_c * (1-a_c) * lmbda * tildeapprate * (1 - apprate) * \
             (-apprate * F(lmbda * barapprate) / barapprate + apprate * np.exp(-lmbda * barapprate) / barapprate)**2
     return (t1 + t2 + t3 + t4) / (1-a_c)
 
 def cvtc_cr(apprate, tildeapprate, barapprate, lmbda, a_c):
     cvself_cr = 2 * apprate * tildeapprate * F(lmbda * barapprate)**2
     t1 = -apprate * tildeapprate * lmbda * np.exp(-2 * lmbda * barapprate) / barapprate
-    t2 = (1-a_c) * lmbda * apprate * (1 - (1-a_c) * apprate) * \
+    t2 = lmbda * apprate * (1 - apprate) * \
             (-tildeapprate * F(lmbda * barapprate) / barapprate + tildeapprate * np.exp(-lmbda * barapprate) / barapprate) * \
             (a_c * tildeapprate * F(lmbda * barapprate) / barapprate + (1-a_c) * apprate * np.exp(-lmbda * barapprate) / barapprate)
-    t3 = a_c * lmbda * tildeapprate * (1 - a_c * tildeapprate) * \
+    t3 = lmbda * tildeapprate * (1 - tildeapprate) * \
             ((1-a_c) * apprate * F(lmbda * barapprate) / barapprate + a_c * tildeapprate * np.exp(-lmbda * barapprate) / barapprate) * \
             (-apprate * F(lmbda * barapprate) / barapprate + apprate * np.exp(-lmbda * barapprate) / barapprate)
     return -2 * (t1 + t2 + t3) + cvself_cr
@@ -73,6 +88,12 @@ def nvar_cr(conrate, tildeconrate, lmbda, a_c):
             cvtt_cr(apprate, tildeapprate, barapprate, lmbda, a_c) + \
             cvcc_cr(apprate, tildeapprate, barapprate, lmbda, a_c) + \
             cvtc_cr(apprate, tildeapprate, barapprate, lmbda, a_c)
+
+def finite_var_lr(conrate, tilde_conrate, lmbd, a_l, n):
+    return nvar_lr(conrate, tilde_conrate, lmbd, a_l) / n
+
+def finite_var_cr(conrate, tilde_conrate, lmbd, a_c, n):
+    return nvar_cr(conrate, tilde_conrate, lmbd, a_c) / n
 
 def next_line(infile):
     while True:

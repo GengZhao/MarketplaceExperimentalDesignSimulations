@@ -1,3 +1,7 @@
+/*
+ * Proof of concept for the Marketplace class.
+ * Can be executed, but rarely used as an experiment.
+ */
 #include <iostream>   
 #include <fstream>
 #include <vector>
@@ -19,38 +23,6 @@ int main()
             vector<vector<long double> >{vector<long double>{0.001, 0.01,0.1}, vector<long double>{0.001, 0.01, 0.1}},
             vector<vector<long double> >{vector<long double>{0.1008, 0.1009, 0.101}, vector<long double>{0.1008, 0.1009, 0.101}});
     // Marketplace mp(n, m, vector<long double>{1.0}, vector<long double>{1.0}, vector<vector<long double> >{vector<long double>{0.11133}}, vector<vector<long double> >{vector<long double>{0.11258}});
-    /*
-    mp.run_LR();
-    cout << mp.get_LR_estimator() << ' ' << mp.get_LR_estimator_nonlinear() << endl;
-    mp.run_LR();
-    cout << mp.get_LR_estimator() << ' ' << mp.get_LR_estimator_nonlinear() << endl;
-    mp.run_LR();
-    cout << mp.get_LR_estimator() << ' ' << mp.get_LR_estimator_nonlinear() << endl;
-    mp.run_LR();
-    cout << mp.get_LR_estimator() << ' ' << mp.get_LR_estimator_nonlinear() << endl;
-    mp.run_LR();
-    cout << mp.get_LR_estimator() << ' ' << mp.get_LR_estimator_nonlinear() << endl;
-    mp.run_LR();
-    cout << mp.get_LR_estimator() << ' ' << mp.get_LR_estimator_nonlinear() << endl;
-    mp.run_LR();
-    cout << mp.get_LR_estimator() << ' ' << mp.get_LR_estimator_nonlinear() << endl;
-    mp.run_LR();
-    cout << mp.get_LR_estimator() << ' ' << mp.get_LR_estimator_nonlinear() << endl << endl;
-    mp.run_CR(0.99);
-    cout << mp.get_CR_estimator() << ' ' << mp.get_CR_estimator_nonlinear() << endl;
-    mp.run_CR(0.99);
-    cout << mp.get_CR_estimator() << ' ' << mp.get_CR_estimator_nonlinear() << endl;
-    mp.run_CR(0.99);
-    cout << mp.get_CR_estimator() << ' ' << mp.get_CR_estimator_nonlinear() << endl;
-    mp.run_CR(0.99);
-    cout << mp.get_CR_estimator() << ' ' << mp.get_CR_estimator_nonlinear() << endl;
-    mp.run_CR(0.99);
-    cout << mp.get_CR_estimator() << ' ' << mp.get_CR_estimator_nonlinear() << endl;
-    mp.run_CR(0.99);
-    cout << mp.get_CR_estimator() << ' ' << mp.get_CR_estimator_nonlinear() << endl;
-    mp.run_CR(0.99);
-    cout << mp.get_CR_estimator() << ' ' << mp.get_CR_estimator_nonlinear() << endl;
-    */
     for (int i = 0; i < 50; i++) {
         mp.run_CR(0.99);
         cout << mp.get_CR_estimator() << endl;

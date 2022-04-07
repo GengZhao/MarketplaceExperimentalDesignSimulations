@@ -1,3 +1,6 @@
+/*
+ * <Rarely used experiment> Log detailed outcome in TSR (i.e., Q_ij for i,j=0,1)
+ */
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -19,20 +22,33 @@ static void printKs(const vector<long double>& ks, ostream& os) {
 }
 
 int main() {
+    // WARN: Edit these settings before execution
     int nIters = 8000;
     int nThrds = 48;
 
+    /* phi     | booking rate = 1 - exp(-(1 - exp(-phi)))
+     * --------+--------
+     * 0.11133 | 0.1
+     * 0.11258 | 0.101
+     * 0.1239  | 0.11
+     * 0.17736 | 0.15
+     * 0.2525  | 0.2
+     * 0.28563 | 0.22
+     * 0.33924 | 0.25
+     * 0.44111 | 0.3
+     */
+    // WARN: Edit these settings before execution
     long double phi_0 = /* 0.1 book rate */ 0.11133;
-    long double phi_1 = /* 0.11 book rate */ 0.1239; // = /* 0.101 book rate */ 0.11258;
-    unsigned long long n = 524'288ULL; // 536'870'912ULL; // 2'097'152ULL; // 1'048'576ULL; // 2^20
-    unsigned long long m = 524'288ULL; // 67'108'864ULL; // 16'777'216ULL; // 90'699'264ULL; // 3^11 * 2^9
+    long double phi_1 = /* 0.11 book rate */ 0.1239;
+    unsigned long long n = 524'288ULL;
+    unsigned long long m = 524'288ULL;
     long double rho = (long double) m / n;
     long double beta = exp(-rho);
     vector<long double> ks = {0.0, 1.0, 2.0};
 
     ofstream outFile;
     string timeStr = getTime();
-    outFile.open("varying_design-" + timeStr + ".txt");
+    outFile.open("varying_design-" + timeStr + ".txt"); // Output file name
 
     long double stepSize = 0.04;
     long double a_l = stepSize;

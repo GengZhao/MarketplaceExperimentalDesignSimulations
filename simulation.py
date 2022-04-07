@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+'''
+Obsolete. Use C++ simulations instead.
+'''
 import numpy as np
 from matplotlib import pyplot as plt
 

@@ -1,3 +1,6 @@
+/*
+ * Experiment to evaluate various estimators, notably LR and CR.
+ */
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -19,21 +22,35 @@ static void printKs(const vector<long double>& ks, ostream& os) {
 }
 
 int main() {
+    // TODO: Edit these settings before execution
     int nIters = 20000;
-    int nThrds = 48;
+    int nThrds = 48; // Number of threads
     int nSteps = 14;
 
-    long double phi_0 = 0.11133; // 0.11133;
-    long double phi_1 = 0.14997; // 0.11258;
-    unsigned long long n = 16'777'216ULL; // 536'870'912ULL; // 2'097'152ULL; // 1'048'576ULL; // 2^20
-    unsigned long long m = 16'777'216ULL; // 67'108'864ULL; // 16'777'216ULL; // 90'699'264ULL; // 3^11 * 2^9
+    /* phi     | booking rate = 1 - exp(-(1 - exp(-phi)))
+     * --------+--------
+     * 0.11133 | 0.1
+     * 0.11258 | 0.101
+     * 0.1239  | 0.11
+     * 0.17736 | 0.15
+     * 0.2525  | 0.2
+     * 0.28563 | 0.22
+     * 0.33924 | 0.25
+     * 0.44111 | 0.3
+     */
+    // TODO: Edit these settings before execution
+    // Also, modify update rules on m and n at the end of file as needed
+    long double phi_0 = 0.11133;
+    long double phi_1 = 0.14997;
+    unsigned long long n = 16'777'216ULL;
+    unsigned long long m = 16'777'216ULL;
     long double base_a_l = 0.5;
     long double base_a_c = 0.5;
     vector<long double> ks = {1.0, 2.0};
 
     ofstream outFile;
     string timeStr = getTime();
-    outFile.open("eval_estimators-" + timeStr + ".txt");
+    outFile.open("eval_estimators-" + timeStr + ".txt"); // Output file name
 
     // Print nSteps
     outFile << nSteps << '\n';
@@ -140,6 +157,7 @@ int main() {
         printVector(tsr_q11, outFile);
 
         cout << "=> n & m: " << n << ' ' << m << endl;
+        // TODO: modify these two update rules to achieve other variations of market size/balance sequence
         n /= 2;
         m /= 2;
     }
